@@ -1,17 +1,11 @@
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-718a45dd9cf7e7f842a935f5ebbe5719a5e09af4491e668f4dbf3b35d5cca122.svg)](https://classroom.github.com/online_ide?assignment_repo_id=10782698&assignment_repo_type=AssignmentRepo)
-# Project P3 - Using File Path Names Securely
 
-**_This is an individual project.  Do you own work!  Due: April 28, 2023 at 11:59pm_**
-
-**_See Chapters 39 and 40 in "Operating Systems: Three Easy Pieces" for background.  We’ll discuss this in class next week.  Read this intro section by Tu._**
+# Project 3 - Using File Path Names Securely
 
 Perhaps surprisingly, opening a file creates several security risks.  The “open” system call takes as input a file pathname string, such as “/var/mail/root”, and returns a file descriptor to the file system object managed by the operating system that represents the file stored on the persistent storage (e.g., disk or flash device).  See the commands supported by our filesystem under the “Command Interface” section below.
 
 When we open a file, the pathname is resolved by element-by-element - (1) the “/” (root); (2) then “/var”; (3) then “/var/mail/”; and (4) finally “/var/mail/root”.  This process is called **pathname resolution**, where each element of the pathname is converted into an operating system resource.  Normally, steps (1-3) result in the transformation of the elements into file system objects (inodes) that represent directories, one for “/”, one for “/var”, and one for “/var/mail”.  Then, step (4) resolves the last element “root” in the directory “/var/mail” into an inode that represents a file.
 
 While this seems like a straightforward process, the complexity of file systems introduces risks that may enable an adversary to tamper with the process, preventing you from opening the file you intended.  We will examine three issues:
-
-
 
 1. **Symbolic links**: Symbolic links are a special kind of file system object.  Instead of storing file data, symbolic links store a path to a file.  Again, if the directory “/var/mail” is writable by others, then anyone could create “/var/mail/root” as a symbolic link to any file you want, even one you do not have access to.  Suppose you wanted to open the privileged file “/etc/shadow” that stores password hashes.  You could create a symbolic link “/var/mail/root” whose value is the pathname “/etc/shadow”.  Should the root user try to open “/var/mail/root”, the file system will detect that that file system object is an inode for a symbolic link and then perform further pathname resolution on its value to open “/etc/shadow” (root has access to that file).
 2. **Name Collisions**: Another issue is that individual file systems may resolve elements of a pathname differently, creating the potential for unexpected name collisions.   Historically, different operating systems treat file names differently: e.g., Linux is case-sensitive and Windows is case-preserving.   Thus, a Linux directory would create two files for “ROOT” and “root”, but only one file would be accessed for both of these names in Windows and Mac OS X.  Recently, one Linux file system (ext4) has adopted the approach that each directory in a file system may be either case-sensitive or case-preserving.  For example, if the directory “/var/mail” is case-preserving, and the file “ROOT” is added first, then the name “root” will refer to the file “ROOT”, i.e., the same file system object as “ROOT”.  
